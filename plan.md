@@ -1,5 +1,3 @@
-That sounds like a fantastic project for your YouTube channel! Below is a structured guide to help you develop the "Coding Guessing Game" web project, along with a to-do list to keep you organized.
-
 ### Project Overview
 
 **Project Name:** Coding Guessing Game

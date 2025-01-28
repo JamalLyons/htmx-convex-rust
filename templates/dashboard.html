@@ -1,5 +1,15 @@
 {% extends 'layout.html' %} {% block content %}
 
-<h2>Dashboard</h2>
+<h2 class="text-2xl font-bold mb-4">Available Quizzes</h2>
+<ul class="list-disc list-inside">
+    {% for quiz in quizzes %}
+    <li class="mb-2">
+        <strong>{{ quiz.name }}</strong> ({{ quiz.subject }}) - Points Awarded:
+        {{ quiz.points_awarded }} - Status: {{ quiz.completed }}
+    </li>
+    {% else %}
+    <li>No quizzes available.</li>
+    {% endfor %}
+</ul>
 
 {% endblock %}

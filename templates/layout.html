@@ -1,79 +1,146 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta
-            name="description"
-            content="Test your programming knowledge with the Code Guessing Game. Take quizzes on programming facts and code snippets!"
-        />
-        <meta
-            name="keywords"
-            content="coding, programming, quizzes, game, learning, education"
-        />
-        <meta name="author" content="Jamal Lyons" />
-        <meta name="theme-color" content="#1e1e1e" />
-        <meta property="og:title" content="Code Guessing Game" />
-        <meta
-            property="og:description"
-            content="Test your programming knowledge with our quizzes!"
-        />
-        <meta property="og:image" content="URL_to_your_image" />
-        <meta property="og:url" content="https://yourwebsite.com" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Code Guessing Game" />
-        <meta
-            name="twitter:description"
-            content="Test your programming knowledge with our quizzes!"
-        />
-        <meta name="twitter:image" content="URL_to_your_image" />
-        <script
-            src="https://unpkg.com/htmx.org@2.0.4"
-            integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
-            crossorigin="anonymous"
-        ></script>
-        <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-        <title>Code Guessing Game</title>
-        <style>
-            /* Custom styles for terminal theme */
-            body {
-                background-color: #1e1e1e; /* Dark background */
-                color: #00ff00; /* Green text */
-                display: flex;
-                flex-direction: column;
-                min-height: 100vh;
-            }
-            main {
-                flex: 1;
-            }
-        </style>
-    </head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Test your programming knowledge with the Code Guessing Game. Take quizzes on programming facts and code snippets!"
+    />
+    <meta
+      name="keywords"
+      content="coding, programming, quizzes, game, learning, education"
+    />
+    <meta name="author" content="Jamal Lyons" />
+    <meta name="theme-color" content="#1e1e1e" />
+    <meta property="og:title" content="Code Guessing Game" />
+    <meta
+      property="og:description"
+      content="Test your programming knowledge with our quizzes!"
+    />
+    <meta property="og:image" content="URL_to_your_image" />
+    <meta property="og:url" content="https://yourwebsite.com" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Code Guessing Game" />
+    <meta
+      name="twitter:description"
+      content="Test your programming knowledge with our quizzes!"
+    />
+    <meta name="twitter:image" content="URL_to_your_image" />
+    <script
+      src="https://unpkg.com/htmx.org@2.0.4"
+      integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <title>Code Guessing Game</title>
+    <style>
+      @keyframes cursor-blink {
+        0%,
+        100% {
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
 
-    <body hx-boost="true" class="font-mono">
-        <div class="container mx-auto p-4 flex-grow">
-            <header
-                class="flex justify-between items-center border-b border-gray-700 pb-4 mb-4"
+      .terminal-cursor::after {
+        content: "█";
+        animation: cursor-blink 1s infinite;
+        color: #00ff00;
+        margin-left: 2px;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #2d2d2d;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #00ff00;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #00cc00;
+      }
+
+      /* Selection color */
+      ::selection {
+        background: #00ff00;
+        color: #1e1e1e;
+      }
+    </style>
+  </head>
+
+  <body
+    hx-boost="true"
+    class="font-mono bg-[#1e1e1e] text-green-400 min-h-screen flex flex-col"
+  >
+    <div class="container mx-auto p-4 flex-grow max-w-4xl">
+      <header class="border-b border-green-700 pb-4 mb-8">
+        <div
+          class="flex flex-col sm:flex-row justify-between items-center gap-4"
+        >
+          <h1 class="text-3xl font-bold terminal-cursor">Code Guessing Game</h1>
+          <nav class="space-x-6">
+            <a
+              href="/"
+              class="text-green-400 hover:text-green-300 hover:underline transition-colors"
             >
-                <h1 class="text-3xl font-bold">Code Guessing Game</h1>
-                <nav class="space-x-4">
-                    <a href="/" class="text-green-400 hover:text-green-300"
-                        >Home</a
-                    >
-                    <a
-                        href="/dashboard"
-                        class="text-green-400 hover:text-green-300"
-                        >Dashboard</a
-                    >
-                </nav>
-            </header>
-            <main>{% block content %}{% endblock %}</main>
+              ~/home
+            </a>
+            <a
+              href="/dashboard"
+              class="text-green-400 hover:text-green-300 hover:underline transition-colors"
+            >
+              ~/dashboard
+            </a>
+          </nav>
         </div>
-        <footer class="bg-gray-800 text-green-400 py-4 mt-8">
-            <div class="container mx-auto flex justify-between items-center">
-                <p class="text-sm ml-2">
-                    &copy; {{ current_year }} Jamal Lyons. All rights reserved.
-                </p>
-            </div>
-        </footer>
-    </body>
+      </header>
+      <main
+        class="bg-[#252525] p-6 rounded-lg shadow-lg border border-green-900/30"
+      >
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    <footer
+      class="bg-[#252525] text-green-400 py-4 mt-8 border-t border-green-900/30"
+    >
+      <div class="container mx-auto max-w-4xl px-4">
+        <div class="flex justify-between items-center">
+          <p class="text-sm opacity-80">
+            [system] © {{ current_year }} Jamal Lyons. All rights reserved.
+          </p>
+          <a
+            href="https://github.com/JamalLyons/htmx-convex-rust"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm text-green-400 hover:text-green-300 transition-colors flex items-center gap-2"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <span>GitHub</span>
+          </a>
+        </div>
+      </div>
+    </footer>
+  </body>
 </html>

@@ -14,10 +14,12 @@
 ### Project Structure
 
 1. **Landing Page**
+
    - Brief introduction to the game
    - Link to the user dashboard
 
 2. **User Dashboard**
+
    - List of available quizzes
    - Display completion status for each quiz
    - Show the user's master score
@@ -37,9 +39,9 @@
 
 #### 2. Create the Landing Page
 
-- [ ] Create a `landing.html` template using Tera.
-- [ ] Add a brief introduction to the game.
-- [ ] Include a link to the user dashboard.
+- [x] Create a `landing.html` template using Tera.
+- [x] Add a brief introduction to the game.
+- [x] Include a link to the user dashboard.
 
 #### 3. User Authentication (Optional)
 
@@ -129,18 +131,22 @@ async fn quiz(web::Path(id): web::Path<u32>) -> HttpResponse {
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/path/to/tailwind.css" rel="stylesheet">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/path/to/tailwind.css" rel="stylesheet" />
     <title>Coding Guessing Game</title>
-</head>
-<body class="bg-gray-100">
+  </head>
+  <body class="bg-gray-100">
     <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold">Welcome to the Coding Guessing Game!</h1>
-        <p class="mt-2">Test your programming knowledge with our quizzes.</p>
-        <a href="/dashboard" class="mt-4 inline-block bg-blue-500 text-white p-2 rounded">Go to Dashboard</a>
+      <h1 class="text-2xl font-bold">Welcome to the Coding Guessing Game!</h1>
+      <p class="mt-2">Test your programming knowledge with our quizzes.</p>
+      <a
+        href="/dashboard"
+        class="mt-4 inline-block bg-blue-500 text-white p-2 rounded"
+        >Go to Dashboard</a
+      >
     </div>
-</body>
+  </body>
 </html>
 ```

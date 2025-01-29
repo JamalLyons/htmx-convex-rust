@@ -1,15 +1,58 @@
 {% extends 'layout.html' %} {% block content %}
 
-<h2 class="text-2xl font-bold mb-4">Available Quizzes</h2>
-<ul class="list-disc list-inside">
-    {% for quiz in quizzes %}
-    <li class="mb-2">
-        <strong>{{ quiz.name }}</strong> ({{ quiz.subject }}) - Points Awarded:
-        {{ quiz.points_awarded }} - Status: {{ quiz.completed }}
-    </li>
-    {% else %}
-    <li>No quizzes available.</li>
-    {% endfor %}
+<h2 class="text-2xl font-bold mb-6 terminal-cursor">Available Quizzes</h2>
+<ul class="space-y-4">
+  {% for quiz in quizzes %}
+  <li
+    class="p-4 rounded-lg {% if quiz.completed %}bg-gray-800/50{% else %}bg-[#2d2d2d] hover:bg-[#333333]{% endif %} transition-colors border border-green-900/30 {% if quiz.completed %}text-gray-500{% endif %}"
+  >
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+    >
+      <div>
+        <strong class="text-lg">{{ quiz.name }}</strong>
+        <div class="text-sm opacity-80">[{{ quiz.subject }}]</div>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-sm">
+          Points: <span class="text-green-400">{{ quiz.points_awarded }}</span>
+        </span>
+        {% if quiz.completed %}
+        <span
+          class="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-gray-700/50 text-gray-300"
+        >
+          <svg
+            class="mr-1.5 h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            ></path>
+          </svg>
+          Completed
+        </span>
+        {% else %}
+        <span
+          class="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-green-900/30 text-green-400"
+        >
+          Available
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </li>
+  {% else %}
+  <li
+    class="text-center p-8 bg-[#2d2d2d] rounded-lg border border-green-900/30"
+  >
+    <span class="opacity-70">No quizzes available in the system.</span>
+  </li>
+  {% endfor %}
 </ul>
 
 {% endblock %}

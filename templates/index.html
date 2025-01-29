@@ -1,42 +1,61 @@
 {% extends 'layout.html' %} {% block content %}
 
-<div class="mt-8">
-    <h2 class="text-3xl font-bold mb-4">Welcome to the Code Guessing Game!</h2>
-    <p class="mb-6">
-        Are you ready to test your programming knowledge? The Coding Guessing
-        Game is an interactive quiz platform where you can challenge yourself
-        with multiple-choice questions about programming facts and code
-        snippets.
+<div class="space-y-8">
+  <div>
+    <h2 class="text-3xl font-bold mb-4 terminal-cursor">
+      Welcome to the Code Guessing Game!
+    </h2>
+    <p class="mb-4 leading-relaxed opacity-90">
+      Are you ready to test your programming knowledge? The Coding Guessing Game
+      is an interactive quiz platform where you can challenge yourself with
+      multiple-choice questions about programming facts and code snippets.
     </p>
-    <p class="mb-6">
-        Whether you're a beginner or an experienced developer, our quizzes are
-        designed to help you learn and reinforce your coding skills in a fun and
-        engaging way. Complete quizzes, track your scores, and compete with
-        others to become the ultimate coding champion!
+    <p class="leading-relaxed opacity-90">
+      Whether you're a beginner or an experienced developer, our quizzes are
+      designed to help you learn and reinforce your coding skills in a fun and
+      engaging way. Complete quizzes, track your scores, and compete with others
+      to become the ultimate coding champion!
     </p>
+  </div>
 
-    <div class="bg-gray-800 p-4 rounded-lg shadow-lg mb-6">
-        <h3 class="text-xl font-semibold mb-2">How It Works:</h3>
-        <ul class="list-disc list-inside">
-            <li>Choose a quiz from the dashboard.</li>
-            <li>Answer multiple-choice questions.</li>
-            <li>Receive instant feedback on your answers.</li>
-            <li>Track your master score and compete with friends!</li>
-        </ul>
-    </div>
+  <div class="bg-[#2d2d2d] p-6 rounded-lg border border-green-900/30">
+    <h3 class="text-xl font-semibold mb-4 terminal-cursor">
+      System Instructions:
+    </h3>
+    <ul class="space-y-2 list-none">
+      <li class="flex items-start">
+        <span class="text-green-400 mr-2">$</span>
+        Choose a quiz from the dashboard
+      </li>
+      <li class="flex items-start">
+        <span class="text-green-400 mr-2">$</span>
+        Answer multiple-choice questions
+      </li>
+      <li class="flex items-start">
+        <span class="text-green-400 mr-2">$</span>
+        Receive instant feedback on your answers
+      </li>
+      <li class="flex items-start">
+        <span class="text-green-400 mr-2">$</span>
+        Track your master score and compete with friends
+      </li>
+    </ul>
+  </div>
 
-    <div class="animate-pulse">
-        <h3 class="text-xl font-semibold mb-2">Get Started:</h3>
-        <p class="mb-4">
-            Click the button below to begin your coding adventure!
-        </p>
-        <a
-            href="/dashboard"
-            class="inline-block bg-green-500 text-black p-3 rounded transition duration-300 hover:bg-green-400"
-        >
-            Start Quiz
-        </a>
-    </div>
+  <div class="text-center">
+    <h3 class="text-xl font-semibold mb-4 terminal-cursor">
+      Initialize Session:
+    </h3>
+    <p class="mb-6 opacity-90">
+      Execute the following command to begin your coding adventure:
+    </p>
+    <a
+      href="/dashboard"
+      class="inline-block bg-green-700 hover:bg-green-600 text-black font-bold py-3 px-6 rounded transition duration-300 transform hover:scale-105"
+    >
+      ./start-quiz
+    </a>
+  </div>
 </div>
 
 {% endblock %}

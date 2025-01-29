@@ -30,10 +30,10 @@
 
 #### 1. Set Up the Project
 
-- [ ] Initialize a new Rust project using Actix-web.
-- [ ] Set up Tera as the template engine.
-- [ ] Install Tailwind CSS for styling.
-- [ ] Set up HTMX for dynamic content loading.
+- [x] Initialize a new Rust project using Actix-web.
+- [x] Set up Tera as the template engine.
+- [x] Install Tailwind CSS for styling.
+- [x] Set up HTMX for dynamic content loading.
 
 #### 2. Create the Landing Page
 

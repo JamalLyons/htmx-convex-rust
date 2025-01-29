@@ -1,0 +1,45 @@
+<div class="space-y-4" id="quiz-content">
+  <h3 class="text-lg font-semibold terminal-cursor">
+    Question {{ current_question + 1 }}/{{ total_questions }}
+  </h3>
+  <p class="mb-4">{{ quiz.questions[current_question].text }}</p>
+
+  <form class="space-y-3" hx-post="/submit-answer" hx-target="#quiz-content">
+    <input type="hidden" name="quiz_id" value="{{ quiz.id }}" />
+    <input type="hidden" name="question_index" value="{{ current_question }}" />
+
+    {% for option in quiz.questions[current_question].options %}
+    <label
+      class="block p-4 rounded border border-green-900/30 hover:bg-[#333333] cursor-pointer transition-colors"
+    >
+      <input
+        type="radio"
+        name="answer"
+        value="{{ loop.index0 }}"
+        class="mr-3"
+        required
+      />
+      {{ option }}
+    </label>
+    {% endfor %}
+
+    <div class="flex justify-end mt-6">
+      <button
+        type="submit"
+        class="bg-green-700 hover:bg-green-600 text-black font-bold py-2 px-4 rounded transition-colors"
+      >
+        {% if current_question + 1 == total_questions %} Complete Quiz {% else
+        %} Next Question {% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+<div class="bg-[#2d2d2d] p-4 rounded-lg border border-green-900/30 mt-6">
+  <div class="flex justify-between items-center text-sm">
+    <span
+      >Progress: {{ current_question }}/{{ total_questions }} questions</span
+    >
+    <span>Current Score: {{ current_score }} points</span>
+  </div>
+</div>

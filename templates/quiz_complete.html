@@ -1,0 +1,27 @@
+<div class="text-center space-y-6" id="quiz-content">
+  <h3 class="text-2xl font-bold terminal-cursor">Quiz Complete!</h3>
+  <p class="text-lg">You've completed the {{ quiz.name }} quiz.</p>
+
+  <div
+    class="bg-[#2d2d2d] p-6 rounded-lg border border-green-900/30 inline-block"
+  >
+    <p class="text-3xl font-bold text-green-400">
+      Final Score: {{ current_score }}/{{ quiz.points_awarded }}
+    </p>
+  </div>
+
+  <div class="flex justify-center gap-4">
+    <a
+      href="/dashboard"
+      class="bg-green-700 hover:bg-green-600 text-black font-bold py-2 px-4 rounded transition-colors"
+    >
+      Return to Dashboard
+    </a>
+    <a
+      href="/start-quiz"
+      class="bg-[#333333] hover:bg-[#444444] text-green-400 font-bold py-2 px-4 rounded transition-colors"
+    >
+      Try Another Quiz
+    </a>
+  </div>
+</div>

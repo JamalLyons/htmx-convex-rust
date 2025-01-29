@@ -9,5 +9,6 @@ actix-web = "4.9.0"
 chrono = "0.4.39"
 dotenvy = "0.15.7"
 lazy_static = "1.5.0"
+rand = "0.9.0"
 serde = { version = "1.0.217", features = ["derive"] }
 tera = "1.20.0"

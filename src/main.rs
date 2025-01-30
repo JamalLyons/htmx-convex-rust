@@ -35,106 +35,7 @@ lazy_static! {
         };
         tera
     };
-    pub static ref QUIZZES: Vec<Quiz> = vec![
-        Quiz {
-            id: "1".to_string(),
-            subject: "Rust Fundamentals".to_string(),
-            name: "Ownership and Borrowing".to_string(),
-            points_awarded: 15,
-            completed: false,
-            description: "Test your knowledge of Rust's ownership system and borrowing rules."
-                .to_string(),
-            questions: vec![
-                Question {
-                    text: "What is the primary benefit of Rust's ownership system?".to_string(),
-                    options: vec![
-                        "Memory safety without garbage collection".to_string(),
-                        "Automatic memory management with GC".to_string(),
-                        "Dynamic typing capabilities".to_string(),
-                        "Interpreted language features".to_string(),
-                    ],
-                    correct_answer: 0,
-                },
-                Question {
-                    text: "In Rust, how many owners can a piece of data have at a time?"
-                        .to_string(),
-                    options: vec![
-                        "As many as needed".to_string(),
-                        "Two".to_string(),
-                        "One".to_string(),
-                        "Zero".to_string(),
-                    ],
-                    correct_answer: 2,
-                },
-                Question {
-                    text: "What happens when a variable goes out of scope in Rust?".to_string(),
-                    options: vec![
-                        "Nothing".to_string(),
-                        "The memory is automatically freed".to_string(),
-                        "It becomes null".to_string(),
-                        "It's garbage collected".to_string(),
-                    ],
-                    correct_answer: 1,
-                },
-                Question {
-                    text: "Which of these is a mutable borrow?".to_string(),
-                    options: vec![
-                        "&self".to_string(),
-                        "&'static str".to_string(),
-                        "&mut String".to_string(),
-                        "String".to_string(),
-                    ],
-                    correct_answer: 2,
-                },
-                Question {
-                    text: "What is the purpose of the 'move' keyword in Rust?".to_string(),
-                    options: vec![
-                        "To copy data".to_string(),
-                        "To force ownership transfer".to_string(),
-                        "To create a reference".to_string(),
-                        "To delete data".to_string(),
-                    ],
-                    correct_answer: 1,
-                },
-            ],
-        },
-        Quiz {
-            id: "2".to_string(),
-            subject: "Web Development".to_string(),
-            name: "HTMX Basics".to_string(),
-            points_awarded: 10,
-            completed: true,
-            description: "Learn about HTMX attributes and basic Ajax patterns.".to_string(),
-            questions: vec![],
-        },
-        Quiz {
-            id: "3".to_string(),
-            subject: "Database".to_string(),
-            name: "Convex Fundamentals".to_string(),
-            points_awarded: 12,
-            completed: true,
-            description: "Explore the basics of Convex database and its features.".to_string(),
-            questions: vec![],
-        },
-        Quiz {
-            id: "4".to_string(),
-            subject: "Rust Web".to_string(),
-            name: "Actix-web Essentials".to_string(),
-            points_awarded: 20,
-            completed: true,
-            description: "Master the fundamentals of the Actix-web framework.".to_string(),
-            questions: vec![],
-        },
-        Quiz {
-            id: "5".to_string(),
-            subject: "Frontend".to_string(),
-            name: "Tailwind CSS Mastery".to_string(),
-            points_awarded: 8,
-            completed: true,
-            description: "Learn essential Tailwind CSS utilities and patterns.".to_string(),
-            questions: vec![],
-        },
-    ];
+    pub static ref QUIZZES: Vec<Quiz> = vec![];
 }
 
 #[actix_web::main]
@@ -226,6 +127,7 @@ struct AnswerSubmission {
     quiz_id: String,
     question_index: usize,
     answer: usize,
+    current_score: u8,
 }
 
 #[post("/submit-answer")]
@@ -235,10 +137,12 @@ async fn submit_answer(form: web::Form<AnswerSubmission>) -> impl Responder {
         let is_correct = form.answer == current_question.correct_answer;
         let next_question_index = form.question_index + 1;
         let total_questions = quiz.questions.len();
-        let current_score = if is_correct {
-            quiz.points_awarded / total_questions as u8
+
+        let points_per_question = quiz.points_awarded / total_questions as u8;
+        let new_score = if is_correct {
+            form.current_score + points_per_question
         } else {
-            0
+            form.current_score
         };
 
         let mut context = tera::Context::new();
@@ -246,9 +150,8 @@ async fn submit_answer(form: web::Form<AnswerSubmission>) -> impl Responder {
         context.insert("current_question", &next_question_index);
         context.insert("total_questions", &total_questions);
         context.insert("is_correct", &is_correct);
-        context.insert("current_score", &current_score);
+        context.insert("current_score", &new_score);
 
-        // If this was the last question, show results
         if next_question_index >= total_questions {
             let page_content = TEMPLATES.render("quiz_complete.html", &context).unwrap();
             HttpResponse::Ok().body(page_content)

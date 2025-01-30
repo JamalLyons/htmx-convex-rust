@@ -139,6 +139,8 @@ lazy_static! {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("Running on http://localhost:8080");
+
     HttpServer::new(|| {
         App::new()
             .service(index_endpoint)

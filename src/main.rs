@@ -34,7 +34,7 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
     info!("Starting server at http://localhost:8080");
 
     let convex_client = ConvexClient::new(&CONVEX_URL).await.unwrap();
@@ -69,7 +69,10 @@ async fn index_endpoint() -> impl Responder {
 #[get("/dashboard")]
 async fn dashboard_endpoint(data: web::Data<AppState>) -> impl Responder {
     let quizzes = match get_quizzes(&data).await {
-        Ok(q) => q,
+        Ok(q) => {
+            // debug!("Fetched quizzes: {:#?}", q);
+            q
+        }
         Err(e) => {
             error!("Failed to fetch quizzes: {}", e);
             return HttpResponse::Found()
@@ -88,7 +91,10 @@ async fn dashboard_endpoint(data: web::Data<AppState>) -> impl Responder {
 #[get("/start-quiz")]
 async fn start_quiz_endpoint(data: web::Data<AppState>) -> impl Responder {
     let quizzes = match get_quizzes(&data).await {
-        Ok(q) => q,
+        Ok(q) => {
+            // debug!("Start quiz - Fetched quizzes: {:#?}", q);
+            q
+        }
         Err(e) => {
             error!("Failed to fetch quizzes: {}", e);
             return HttpResponse::Found()
@@ -101,11 +107,13 @@ async fn start_quiz_endpoint(data: web::Data<AppState>) -> impl Responder {
     let incomplete_quizzes: Vec<&QuizTable> =
         quizzes.iter().filter(|quiz| !quiz.complete).collect();
 
+    debug!("Found {} incomplete quizzes", incomplete_quizzes.len());
+
     match incomplete_quizzes.choose(&mut rand::rng()) {
         Some(quiz) => {
             info!("Starting quiz: {}", quiz.name);
             HttpResponse::Found()
-                .append_header(("Location", format!("/quiz/{}", quiz.name)))
+                .append_header(("Location", format!("/quiz/{}", quiz._id)))
                 .finish()
         }
         None => {
@@ -119,7 +127,6 @@ async fn start_quiz_endpoint(data: web::Data<AppState>) -> impl Responder {
 
 #[get("/quiz/{id}")]
 async fn quiz_endpoint(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
-    let quiz_name = path.into_inner();
     let quizzes = match get_quizzes(&data).await {
         Ok(q) => q,
         Err(e) => {
@@ -130,9 +137,12 @@ async fn quiz_endpoint(path: web::Path<String>, data: web::Data<AppState>) -> im
         }
     };
 
-    if let Some(quiz) = quizzes.iter().find(|q| q.name == quiz_name) {
+    let quiz_id = path.into_inner();
+    debug!("Quiz ID: {}", quiz_id);
+
+    if let Some(quiz) = quizzes.iter().find(|q| q._id == quiz_id) {
         if quiz.questions.is_empty() {
-            info!("Quiz {} has no questions", quiz_name);
+            info!("Quiz {} has no questions", quiz_id);
             return HttpResponse::Found()
                 .append_header(("Location", "/dashboard"))
                 .finish();
@@ -148,7 +158,7 @@ async fn quiz_endpoint(path: web::Path<String>, data: web::Data<AppState>) -> im
         let page_content = TEMPLATES.render("quiz.html", &context).unwrap();
         HttpResponse::Ok().body(page_content)
     } else {
-        error!("Quiz not found: {}", quiz_name);
+        error!("Quiz not found: {}", quiz_id);
         HttpResponse::Found()
             .append_header(("Location", "/dashboard"))
             .finish()
@@ -171,10 +181,24 @@ async fn get_quizzes(data: &web::Data<AppState>) -> Result<Vec<QuizTable>, Strin
     match results {
         convex::FunctionResult::Value(value) => {
             if let ConvexValue::Array(arr) = value {
+                // debug!("Raw JSON from Convex: {:?}", arr);
                 let quizzes = arr
                     .into_iter()
-                    .filter_map(|v| serde_json::to_value(v.into_serde_value()).ok())
-                    .filter_map(|v| serde_json::from_value::<QuizTable>(v).ok())
+                    .filter_map(|v| {
+                        let serde_value = v.into_serde_value();
+                        // debug!("Converting value: {:?}", serde_value);
+                        let json_value = serde_json::to_value(serde_value).ok()?;
+                        match serde_json::from_value::<QuizTable>(json_value.clone()) {
+                            Ok(quiz) => Some(quiz),
+                            Err(e) => {
+                                error!(
+                                    "Failed to deserialize quiz: {:?}\nValue: {:?}",
+                                    e, json_value
+                                );
+                                None
+                            }
+                        }
+                    })
                     .collect();
                 Ok(quizzes)
             } else {
@@ -211,10 +235,7 @@ async fn submit_answer(
 
     if let Some(quiz) = quizzes.iter().find(|q| q.name == form.quiz_id) {
         let current_question = &quiz.questions[form.question_index];
-        let is_correct = form.answer
-            == current_question["correct_answer"]
-                .parse::<usize>()
-                .unwrap_or(0);
+        let is_correct = form.answer == current_question.correct_answer as usize;
         let next_question_index = form.question_index + 1;
         let total_questions = quiz.questions.len();
 

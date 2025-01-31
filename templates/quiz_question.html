@@ -5,7 +5,7 @@
   <p class="mb-4">{{ quiz.questions[current_question].text }}</p>
 
   <form class="space-y-3" hx-post="/submit-answer" hx-target="#quiz-content">
-    <input type="hidden" name="quiz_id" value="{{ quiz.id }}" />
+    <input type="hidden" name="quiz_id" value="{{ quiz.name }}" />
     <input type="hidden" name="question_index" value="{{ current_question }}" />
     <input type="hidden" name="current_score" value="{{ current_score }}" />
 

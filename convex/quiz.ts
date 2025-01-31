@@ -122,13 +122,20 @@ export const seedQuizTable = internalMutation({
     }
 
     const docs = await ctx.db.query("quiz").collect();
+    console.log(`Found ${docs.length} existing quizzes`);
 
     for (const doc of docs) {
       await ctx.db.delete(doc._id);
     }
+    console.log("Deleted all existing quizzes");
 
     for (let quiz of QUIZZES) {
-      await ctx.db.insert("quiz", quiz);
+      const id = await ctx.db.insert("quiz", quiz);
+      console.log(`Inserted quiz: ${quiz.name} with ID: ${id}`);
     }
+
+    // Verify the insertion
+    const newDocs = await ctx.db.query("quiz").collect();
+    console.log(`Total quizzes after seeding: ${newDocs.length}`);
   },
 });

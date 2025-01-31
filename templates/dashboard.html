@@ -4,7 +4,7 @@
 <ul class="space-y-4">
   {% for quiz in quizzes %}
   <li
-    class="p-4 rounded-lg {% if quiz.completed %}bg-gray-800/50{% else %}bg-[#2d2d2d] hover:bg-[#333333]{% endif %} transition-colors border border-green-900/30 {% if quiz.completed %}text-gray-500{% endif %}"
+    class="p-4 rounded-lg {% if quiz.complete %}bg-gray-800/50{% else %}bg-[#2d2d2d] hover:bg-[#333333]{% endif %} transition-colors border border-green-900/30 {% if quiz.complete %}text-gray-500{% endif %}"
   >
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"

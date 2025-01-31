@@ -5,7 +5,7 @@
     <div>
       <h2 class="text-2xl font-bold mb-2 terminal-cursor">{{ quiz.name }}</h2>
       <p class="text-sm opacity-80">
-        [{{ quiz.subject }}] - {{ quiz.points_awarded }} points
+        [{{ quiz.subject }}] - {{ quiz.points }} points
       </p>
     </div>
     <a
@@ -17,7 +17,7 @@
   </div>
 
   <div class="bg-[#2d2d2d] p-6 rounded-lg border border-green-900/30">
-    <p class="mb-6 leading-relaxed">{{ quiz.description }}</p>
+    <p class="mb-6 leading-relaxed">{{ quiz.desc }}</p>
 
     {% include "quiz_question.html" %}
   </div>

@@ -7,13 +7,21 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Question {
+    pub text: String,
+    pub options: Vec<String>,
+    pub correct_answer: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuizTable {
+    pub _id: String,
     pub subject: String,
     pub name: String,
     pub desc: String,
     pub points: f64,
     pub complete: bool,
-    pub questions: Vec<std::collections::BTreeMap<String, String>>,
+    pub questions: Vec<Question>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

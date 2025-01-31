@@ -1,27 +1,17 @@
+mod convex_types;
+
+use std::sync::Mutex;
+
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use chrono::{Datelike, Utc};
+use convex::{ConvexClient, Value as ConvexValue};
+use convex_typegen::convex::{ConvexClientExt, ConvexValueExt};
+use convex_types::{ListArgs, QuizTable};
+use env_logger;
 use lazy_static::lazy_static;
+use log::{debug, error, info};
 use rand::seq::IndexedRandom;
-use serde::Serialize;
 use tera::Tera;
-
-#[derive(Debug, Clone, Serialize)]
-pub struct Question {
-    pub text: String,
-    pub options: Vec<String>,
-    pub correct_answer: usize, // Index of the correct answer (0-based)
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct Quiz {
-    pub id: String,
-    pub subject: String,
-    pub name: String,
-    pub description: String,
-    pub points_awarded: u8,
-    pub completed: bool,
-    pub questions: Vec<Question>,
-}
 
 lazy_static! {
     pub static ref TEMPLATES: Tera = {
@@ -35,21 +25,33 @@ lazy_static! {
         };
         tera
     };
-    pub static ref QUIZZES: Vec<Quiz> = vec![];
+    pub static ref CONVEX_URL: String = "https://rapid-labrador-387.convex.cloud".to_string();
+}
+
+struct AppState {
+    db: Mutex<ConvexClient>,
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Running on http://localhost:8080");
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    info!("Starting server at http://localhost:8080");
 
-    HttpServer::new(|| {
+    let convex_client = ConvexClient::new(&CONVEX_URL).await.unwrap();
+    let state = web::Data::new(AppState {
+        db: Mutex::new(convex_client),
+    });
+
+    HttpServer::new(move || {
         App::new()
+            .app_data(state.clone())
             .service(index_endpoint)
             .service(dashboard_endpoint)
             .service(start_quiz_endpoint)
             .service(quiz_endpoint)
             .service(submit_answer)
     })
+    .workers(1)
     .bind(("127.0.0.1", 8080))?
     .run()
     .await
@@ -65,29 +67,49 @@ async fn index_endpoint() -> impl Responder {
 }
 
 #[get("/dashboard")]
-async fn dashboard_endpoint() -> impl Responder {
+async fn dashboard_endpoint(data: web::Data<AppState>) -> impl Responder {
+    let quizzes = match get_quizzes(&data).await {
+        Ok(q) => q,
+        Err(e) => {
+            error!("Failed to fetch quizzes: {}", e);
+            return HttpResponse::Found()
+                .append_header(("Location", "/"))
+                .finish();
+        }
+    };
     let mut context = tera::Context::new();
-    let year = current_year();
-    context.insert("current_year", &year);
-    context.insert("quizzes", &*QUIZZES);
+    context.insert("current_year", &current_year());
+    context.insert("quizzes", &quizzes);
+
     let page_content = TEMPLATES.render("dashboard.html", &context).unwrap();
     HttpResponse::Ok().body(page_content)
 }
 
 #[get("/start-quiz")]
-async fn start_quiz_endpoint() -> impl Responder {
+async fn start_quiz_endpoint(data: web::Data<AppState>) -> impl Responder {
+    let quizzes = match get_quizzes(&data).await {
+        Ok(q) => q,
+        Err(e) => {
+            error!("Failed to fetch quizzes: {}", e);
+            return HttpResponse::Found()
+                .append_header(("Location", "/dashboard"))
+                .finish();
+        }
+    };
+
     // Get a random incomplete quiz
-    let incomplete_quizzes: Vec<&Quiz> = QUIZZES.iter().filter(|quiz| !quiz.completed).collect();
+    let incomplete_quizzes: Vec<&QuizTable> =
+        quizzes.iter().filter(|quiz| !quiz.complete).collect();
 
     match incomplete_quizzes.choose(&mut rand::rng()) {
         Some(quiz) => {
-            // For now, redirect to dashboard with a future quiz page
+            info!("Starting quiz: {}", quiz.name);
             HttpResponse::Found()
-                .append_header(("Location", format!("/quiz/{}", quiz.id)))
+                .append_header(("Location", format!("/quiz/{}", quiz.name)))
                 .finish()
         }
         None => {
-            // If no incomplete quizzes, redirect to dashboard
+            info!("No incomplete quizzes found");
             HttpResponse::Found()
                 .append_header(("Location", "/dashboard"))
                 .finish()
@@ -96,11 +118,21 @@ async fn start_quiz_endpoint() -> impl Responder {
 }
 
 #[get("/quiz/{id}")]
-async fn quiz_endpoint(path: web::Path<String>) -> impl Responder {
-    let quiz_id = path.into_inner();
+async fn quiz_endpoint(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
+    let quiz_name = path.into_inner();
+    let quizzes = match get_quizzes(&data).await {
+        Ok(q) => q,
+        Err(e) => {
+            error!("Failed to fetch quizzes: {}", e);
+            return HttpResponse::Found()
+                .append_header(("Location", "/dashboard"))
+                .finish();
+        }
+    };
 
-    if let Some(quiz) = QUIZZES.iter().find(|q| q.id == quiz_id) {
+    if let Some(quiz) = quizzes.iter().find(|q| q.name == quiz_name) {
         if quiz.questions.is_empty() {
+            info!("Quiz {} has no questions", quiz_name);
             return HttpResponse::Found()
                 .append_header(("Location", "/dashboard"))
                 .finish();
@@ -116,9 +148,41 @@ async fn quiz_endpoint(path: web::Path<String>) -> impl Responder {
         let page_content = TEMPLATES.render("quiz.html", &context).unwrap();
         HttpResponse::Ok().body(page_content)
     } else {
+        error!("Quiz not found: {}", quiz_name);
         HttpResponse::Found()
             .append_header(("Location", "/dashboard"))
             .finish()
+    }
+}
+
+// Helper function to get quizzes from Convex
+async fn get_quizzes(data: &web::Data<AppState>) -> Result<Vec<QuizTable>, String> {
+    let results = data
+        .db
+        .lock()
+        .unwrap()
+        .query(
+            ListArgs::FUNCTION_PATH,
+            ConvexClient::prepare_args(ListArgs {}),
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    match results {
+        convex::FunctionResult::Value(value) => {
+            if let ConvexValue::Array(arr) = value {
+                let quizzes = arr
+                    .into_iter()
+                    .filter_map(|v| serde_json::to_value(v.into_serde_value()).ok())
+                    .filter_map(|v| serde_json::from_value::<QuizTable>(v).ok())
+                    .collect();
+                Ok(quizzes)
+            } else {
+                Ok(vec![])
+            }
+        }
+        convex::FunctionResult::ErrorMessage(error) => Err(error),
+        convex::FunctionResult::ConvexError(error) => Err(error.message),
     }
 }
 
@@ -131,19 +195,40 @@ struct AnswerSubmission {
 }
 
 #[post("/submit-answer")]
-async fn submit_answer(form: web::Form<AnswerSubmission>) -> impl Responder {
-    if let Some(quiz) = QUIZZES.iter().find(|q| q.id == form.quiz_id) {
+async fn submit_answer(
+    form: web::Form<AnswerSubmission>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    let quizzes = match get_quizzes(&data).await {
+        Ok(q) => q,
+        Err(e) => {
+            error!("Failed to fetch quizzes: {}", e);
+            return HttpResponse::Found()
+                .append_header(("Location", "/dashboard"))
+                .finish();
+        }
+    };
+
+    if let Some(quiz) = quizzes.iter().find(|q| q.name == form.quiz_id) {
         let current_question = &quiz.questions[form.question_index];
-        let is_correct = form.answer == current_question.correct_answer;
+        let is_correct = form.answer
+            == current_question["correct_answer"]
+                .parse::<usize>()
+                .unwrap_or(0);
         let next_question_index = form.question_index + 1;
         let total_questions = quiz.questions.len();
 
-        let points_per_question = quiz.points_awarded / total_questions as u8;
+        let points_per_question = (quiz.points / total_questions as f64) as u8;
         let new_score = if is_correct {
             form.current_score + points_per_question
         } else {
             form.current_score
         };
+
+        info!(
+            "Quiz: {}, Question: {}/{}, Correct: {}, Score: {}",
+            quiz.name, next_question_index, total_questions, is_correct, new_score
+        );
 
         let mut context = tera::Context::new();
         context.insert("quiz", quiz);
@@ -160,6 +245,7 @@ async fn submit_answer(form: web::Form<AnswerSubmission>) -> impl Responder {
             HttpResponse::Ok().body(page_content)
         }
     } else {
+        error!("Quiz not found: {}", form.quiz_id);
         HttpResponse::Found()
             .append_header(("Location", "/dashboard"))
             .finish()

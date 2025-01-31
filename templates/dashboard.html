@@ -15,9 +15,9 @@
       </div>
       <div class="flex items-center gap-3 flex-wrap">
         <span class="text-sm">
-          Points: <span class="text-green-400">{{ quiz.points_awarded }}</span>
+          Points: <span class="text-green-400">{{ quiz.points }}</span>
         </span>
-        {% if quiz.completed %}
+        {% if quiz.complete %}
         <span
           class="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-gray-700/50 text-gray-300"
         >

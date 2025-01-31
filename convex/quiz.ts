@@ -20,6 +20,12 @@ export const remove = mutation({
   },
 });
 
+export const list = query({
+  async handler(ctx) {
+    return await ctx.db.query("quiz").collect();
+  },
+});
+
 const QUIZZES = [
   {
     subject: "Rust Fundamentals",

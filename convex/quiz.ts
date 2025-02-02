@@ -1,6 +1,8 @@
 import { Doc } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { updatePlayerScore } from "./player";
+import { anyApi } from "convex/server";
 
 export const get = query({
   args: {
@@ -27,19 +29,36 @@ export const list = query({
   },
 });
 
-export const markComplete = mutation({
-  args: { quizID: v.id("quiz") },
-  async handler(ctx, args) {
-    await ctx.db.patch(args.quizID, { complete: true });
-    return true;
+export const completeQuiz = mutation({
+  args: {
+    id: v.id("quiz"),
+  },
+  handler: async (ctx, args) => {
+    const quiz = await ctx.db.get(args.id);
+    if (!quiz || quiz.complete) return;
+
+    await ctx.db.patch(args.id, { complete: true });
+
+    // not sure why typed api is not generating
+    await ctx.runMutation(anyApi.player.updatePlayerScore, {
+      pointsChange: quiz.points,
+    });
   },
 });
 
-export const unMarkComplete = mutation({
-  args: { quizID: v.id("quiz") },
-  async handler(ctx, args) {
-    await ctx.db.patch(args.quizID, { complete: false });
-    return true;
+export const resetQuiz = mutation({
+  args: {
+    id: v.id("quiz"),
+  },
+  handler: async (ctx, args) => {
+    const quiz = await ctx.db.get(args.id);
+    if (!quiz || !quiz.complete) return;
+
+    await ctx.db.patch(args.id, { complete: false });
+
+    await ctx.runMutation(anyApi.player.updatePlayerScore, {
+      pointsChange: -quiz.points,
+    });
   },
 });
 

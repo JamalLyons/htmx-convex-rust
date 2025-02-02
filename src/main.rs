@@ -6,7 +6,7 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use chrono::{Datelike, Utc};
 use convex::{ConvexClient, Value as ConvexValue};
 use convex_typegen::convex::{ConvexClientExt, ConvexValueExt};
-use convex_types::{ListArgs, MarkCompleteArgs, QuizTable, UnMarkCompleteArgs};
+use convex_types::{CompleteQuizArgs, GetPlayerScoreArgs, ListArgs, QuizTable, ResetQuizArgs};
 use env_logger;
 use lazy_static::lazy_static;
 use log::{debug, error, info};
@@ -70,10 +70,7 @@ async fn index_endpoint() -> impl Responder {
 #[get("/dashboard")]
 async fn dashboard_endpoint(data: web::Data<AppState>) -> impl Responder {
     let quizzes = match get_quizzes(&data).await {
-        Ok(q) => {
-            // debug!("Fetched quizzes: {:#?}", q);
-            q
-        }
+        Ok(q) => q,
         Err(e) => {
             error!("Failed to fetch quizzes: {}", e);
             return HttpResponse::Found()
@@ -81,9 +78,19 @@ async fn dashboard_endpoint(data: web::Data<AppState>) -> impl Responder {
                 .finish();
         }
     };
+
+    let player_score = match get_player_score(&data).await {
+        Ok(score) => score,
+        Err(e) => {
+            error!("Failed to fetch player score: {}", e);
+            0.0
+        }
+    };
+
     let mut context = tera::Context::new();
     context.insert("current_year", &current_year());
     context.insert("quizzes", &quizzes);
+    context.insert("player_score", &player_score);
 
     let page_content = TEMPLATES.render("dashboard.html", &context).unwrap();
     HttpResponse::Ok().body(page_content)
@@ -329,9 +336,9 @@ async fn mark_quiz_complete(data: &web::Data<AppState>, quiz_id: &str) -> Result
         .lock()
         .unwrap()
         .mutation(
-            MarkCompleteArgs::FUNCTION_PATH,
-            ConvexClient::prepare_args(MarkCompleteArgs {
-                quizID: quiz_id.to_string(),
+            "quiz:completeQuiz",
+            ConvexClient::prepare_args(CompleteQuizArgs {
+                id: quiz_id.to_string(),
             }),
         )
         .await
@@ -345,15 +352,40 @@ async fn un_mark_quiz_complete(data: &web::Data<AppState>, quiz_id: &str) -> Res
         .lock()
         .unwrap()
         .mutation(
-            UnMarkCompleteArgs::FUNCTION_PATH,
-            ConvexClient::prepare_args(UnMarkCompleteArgs {
-                quizID: quiz_id.to_string(),
+            "quiz:resetQuiz",
+            ConvexClient::prepare_args(ResetQuizArgs {
+                id: quiz_id.to_string(),
             }),
         )
         .await
         .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+async fn get_player_score(data: &web::Data<AppState>) -> Result<f64, String> {
+    let result = data
+        .db
+        .lock()
+        .unwrap()
+        .query(
+            GetPlayerScoreArgs::FUNCTION_PATH,
+            ConvexClient::prepare_args(GetPlayerScoreArgs {}),
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    match result {
+        convex::FunctionResult::Value(value) => {
+            if let ConvexValue::Float64(score) = value {
+                Ok(score)
+            } else {
+                Ok(0.0)
+            }
+        }
+        convex::FunctionResult::ErrorMessage(error) => Err(error),
+        convex::FunctionResult::ConvexError(error) => Err(error.message),
+    }
 }
 
 fn current_year() -> String {

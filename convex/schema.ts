@@ -2,6 +2,9 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  player: defineTable({
+    score: v.number(),
+  }),
   quiz: defineTable({
     subject: v.string(),
     name: v.string(),

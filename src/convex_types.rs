@@ -7,6 +7,11 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerTable {
+    pub score: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Question {
     pub text: String,
     pub options: Vec<String>,
@@ -84,23 +89,49 @@ impl From<MarkCompleteArgs> for std::collections::BTreeMap<String, serde_json::V
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UnMarkCompleteArgs {
-    pub quizID: String,
+pub struct CompleteQuizArgs {
+    pub id: String,
 }
 
-impl UnMarkCompleteArgs {
-    pub const FUNCTION_PATH: &'static str = "quiz:unMarkComplete";
+impl CompleteQuizArgs {
+    pub const FUNCTION_PATH: &'static str = "quiz:completeQuiz";
 }
 
-impl From<UnMarkCompleteArgs> for std::collections::BTreeMap<String, serde_json::Value> {
-    fn from(_args: UnMarkCompleteArgs) -> Self {
+impl From<CompleteQuizArgs> for std::collections::BTreeMap<String, serde_json::Value> {
+    fn from(_args: CompleteQuizArgs) -> Self {
         let mut map = std::collections::BTreeMap::new();
-        map.insert(
-            "quizID".to_string(),
-            serde_json::to_value(_args.quizID).unwrap(),
-        );
+        map.insert("id".to_string(), serde_json::to_value(_args.id).unwrap());
         map
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResetQuizArgs {
+    pub id: String,
+}
+
+impl ResetQuizArgs {
+    pub const FUNCTION_PATH: &'static str = "quiz:resetQuiz";
+}
+
+impl From<ResetQuizArgs> for std::collections::BTreeMap<String, serde_json::Value> {
+    fn from(_args: ResetQuizArgs) -> Self {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert("id".to_string(), serde_json::to_value(_args.id).unwrap());
+        map
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetPlayerScoreArgs {}
+
+impl GetPlayerScoreArgs {
+    pub const FUNCTION_PATH: &'static str = "player:getPlayerScore";
+}
+
+impl From<GetPlayerScoreArgs> for std::collections::BTreeMap<String, serde_json::Value> {
+    fn from(_args: GetPlayerScoreArgs) -> Self {
+        std::collections::BTreeMap::new()
     }
 }
 

@@ -65,6 +65,46 @@ impl From<RemoveArgs> for std::collections::BTreeMap<String, serde_json::Value> 
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarkCompleteArgs {
+    pub quizID: String,
+}
+
+impl MarkCompleteArgs {
+    pub const FUNCTION_PATH: &'static str = "quiz:markComplete";
+}
+
+impl From<MarkCompleteArgs> for std::collections::BTreeMap<String, serde_json::Value> {
+    fn from(_args: MarkCompleteArgs) -> Self {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert(
+            "quizID".to_string(),
+            serde_json::to_value(_args.quizID).unwrap(),
+        );
+        map
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnMarkCompleteArgs {
+    pub quizID: String,
+}
+
+impl UnMarkCompleteArgs {
+    pub const FUNCTION_PATH: &'static str = "quiz:unMarkComplete";
+}
+
+impl From<UnMarkCompleteArgs> for std::collections::BTreeMap<String, serde_json::Value> {
+    fn from(_args: UnMarkCompleteArgs) -> Self {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert(
+            "quizID".to_string(),
+            serde_json::to_value(_args.quizID).unwrap(),
+        );
+        map
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListArgs {}
 
 impl ListArgs {

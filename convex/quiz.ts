@@ -26,6 +26,20 @@ export const list = query({
   },
 });
 
+export const markComplete = mutation({
+  args: { quizID: v.id("quiz") },
+  async handler(ctx, args) {
+    await ctx.db.patch(args.quizID, { complete: true });
+  },
+});
+
+export const unMarkComplete = mutation({
+  args: { quizID: v.id("quiz") },
+  async handler(ctx, args) {
+    await ctx.db.patch(args.quizID, { complete: false });
+  },
+});
+
 const QUIZZES = [
   {
     subject: "Rust Fundamentals",

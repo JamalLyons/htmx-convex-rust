@@ -3,11 +3,52 @@
   <p class="text-lg">You've completed the {{ quiz.name }} quiz.</p>
 
   <div
-    class="bg-[#2d2d2d] p-6 rounded-lg border border-green-900/30 inline-block"
+    class="bg-[#2d2d2d] p-6 rounded-lg border {% if passed %}border-green-900/30{% else %}border-red-900/30{% endif %} inline-block"
   >
-    <p class="text-3xl font-bold text-green-400">
+    <p
+      class="text-3xl font-bold {% if passed %}text-green-400{% else %}text-red-400{% endif %}"
+    >
       Final Score: {{ current_score }}/{{ quiz.points }}
+      <span class="text-lg"
+        >({{ percentage | round(method="floor", precision=1) }}%)</span
+      >
     </p>
+
+    {% if passed %}
+    <p class="mt-4 text-green-400">
+      <svg
+        class="w-6 h-6 inline-block mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        ></path>
+      </svg>
+      Congratulations! You've passed the quiz.
+    </p>
+    {% else %}
+    <p class="mt-4 text-red-400">
+      <svg
+        class="w-6 h-6 inline-block mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"
+        ></path>
+      </svg>
+      You need 70% or higher to pass this quiz. Try again!
+    </p>
+    {% endif %}
   </div>
 
   <div class="flex justify-center gap-4">
@@ -17,11 +58,13 @@
     >
       Return to Dashboard
     </a>
+    {% if not passed %}
     <a
       href="/start-quiz"
       class="bg-[#333333] hover:bg-[#444444] text-green-400 font-bold py-2 px-4 rounded transition-colors"
     >
-      Try Another Quiz
+      Try Again
     </a>
+    {% endif %}
   </div>
 </div>

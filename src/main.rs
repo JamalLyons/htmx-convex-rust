@@ -6,7 +6,7 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use chrono::{Datelike, Utc};
 use convex::{ConvexClient, Value as ConvexValue};
 use convex_typegen::convex::{ConvexClientExt, ConvexValueExt};
-use convex_types::{ListArgs, QuizTable};
+use convex_types::{ListArgs, MarkCompleteArgs, QuizTable, UnMarkCompleteArgs};
 use env_logger;
 use lazy_static::lazy_static;
 use log::{debug, error, info};
@@ -50,6 +50,7 @@ async fn main() -> std::io::Result<()> {
             .service(start_quiz_endpoint)
             .service(quiz_endpoint)
             .service(submit_answer)
+            .service(reset_quiz_endpoint)
     })
     .workers(1)
     .bind(("127.0.0.1", 8080))?
@@ -165,51 +166,6 @@ async fn quiz_endpoint(path: web::Path<String>, data: web::Data<AppState>) -> im
     }
 }
 
-// Helper function to get quizzes from Convex
-async fn get_quizzes(data: &web::Data<AppState>) -> Result<Vec<QuizTable>, String> {
-    let results = data
-        .db
-        .lock()
-        .unwrap()
-        .query(
-            ListArgs::FUNCTION_PATH,
-            ConvexClient::prepare_args(ListArgs {}),
-        )
-        .await
-        .map_err(|e| e.to_string())?;
-
-    match results {
-        convex::FunctionResult::Value(value) => {
-            if let ConvexValue::Array(arr) = value {
-                // debug!("Raw JSON from Convex: {:?}", arr);
-                let quizzes = arr
-                    .into_iter()
-                    .filter_map(|v| {
-                        let serde_value = v.into_serde_value();
-                        // debug!("Converting value: {:?}", serde_value);
-                        let json_value = serde_json::to_value(serde_value).ok()?;
-                        match serde_json::from_value::<QuizTable>(json_value.clone()) {
-                            Ok(quiz) => Some(quiz),
-                            Err(e) => {
-                                error!(
-                                    "Failed to deserialize quiz: {:?}\nValue: {:?}",
-                                    e, json_value
-                                );
-                                None
-                            }
-                        }
-                    })
-                    .collect();
-                Ok(quizzes)
-            } else {
-                Ok(vec![])
-            }
-        }
-        convex::FunctionResult::ErrorMessage(error) => Err(error),
-        convex::FunctionResult::ConvexError(error) => Err(error.message),
-    }
-}
-
 #[derive(serde::Deserialize)]
 struct AnswerSubmission {
     quiz_id: String,
@@ -259,6 +215,20 @@ async fn submit_answer(
         context.insert("current_score", &new_score);
 
         if next_question_index >= total_questions {
+            // Calculate percentage score
+            let percentage = (new_score as f64 / quiz.points as f64) * 100.0;
+            let passed = percentage >= 70.0;
+
+            context.insert("percentage", &percentage);
+            context.insert("passed", &passed);
+
+            // If passed, update the quiz status in Convex
+            if passed {
+                if let Err(e) = mark_quiz_complete(&data, &quiz._id).await {
+                    error!("Failed to mark quiz as complete: {}", e);
+                }
+            }
+
             let page_content = TEMPLATES.render("quiz_complete.html", &context).unwrap();
             HttpResponse::Ok().body(page_content)
         } else {
@@ -271,6 +241,119 @@ async fn submit_answer(
             .append_header(("Location", "/dashboard"))
             .finish()
     }
+}
+
+#[post("/reset-quiz")]
+async fn reset_quiz_endpoint(
+    form: web::Form<ResetQuizForm>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    if let Err(e) = un_mark_quiz_complete(&data, &form.quiz_id).await {
+        error!("Failed to reset quiz: {}", e);
+        return HttpResponse::InternalServerError().finish();
+    }
+
+    // Return the updated quiz item HTML
+    let quizzes = match get_quizzes(&data).await {
+        Ok(q) => q,
+        Err(e) => {
+            error!("Failed to fetch quizzes: {}", e);
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
+
+    if let Some(quiz) = quizzes.iter().find(|q| q._id == form.quiz_id) {
+        let mut context = tera::Context::new();
+        context.insert("quiz", quiz);
+        let page_content = TEMPLATES
+            .render("dashboard_quiz_item.html", &context)
+            .unwrap();
+        HttpResponse::Ok().body(page_content)
+    } else {
+        HttpResponse::NotFound().finish()
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct ResetQuizForm {
+    quiz_id: String,
+}
+
+// Helper function to get quizzes from Convex
+async fn get_quizzes(data: &web::Data<AppState>) -> Result<Vec<QuizTable>, String> {
+    let results = data
+        .db
+        .lock()
+        .unwrap()
+        .query(
+            ListArgs::FUNCTION_PATH,
+            ConvexClient::prepare_args(ListArgs {}),
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    match results {
+        convex::FunctionResult::Value(value) => {
+            if let ConvexValue::Array(arr) = value {
+                // debug!("Raw JSON from Convex: {:?}", arr);
+                let quizzes = arr
+                    .into_iter()
+                    .filter_map(|v| {
+                        let serde_value = v.into_serde_value();
+                        // debug!("Converting value: {:?}", serde_value);
+                        let json_value = serde_json::to_value(serde_value).ok()?;
+                        match serde_json::from_value::<QuizTable>(json_value.clone()) {
+                            Ok(quiz) => Some(quiz),
+                            Err(e) => {
+                                error!(
+                                    "Failed to deserialize quiz: {:?}\nValue: {:?}",
+                                    e, json_value
+                                );
+                                None
+                            }
+                        }
+                    })
+                    .collect();
+                Ok(quizzes)
+            } else {
+                Ok(vec![])
+            }
+        }
+        convex::FunctionResult::ErrorMessage(error) => Err(error),
+        convex::FunctionResult::ConvexError(error) => Err(error.message),
+    }
+}
+
+async fn mark_quiz_complete(data: &web::Data<AppState>, quiz_id: &str) -> Result<(), String> {
+    data.db
+        .lock()
+        .unwrap()
+        .mutation(
+            MarkCompleteArgs::FUNCTION_PATH,
+            ConvexClient::prepare_args(MarkCompleteArgs {
+                quizID: quiz_id.to_string(),
+            }),
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+async fn un_mark_quiz_complete(data: &web::Data<AppState>, quiz_id: &str) -> Result<(), String> {
+    data.db
+        .lock()
+        .unwrap()
+        .mutation(
+            UnMarkCompleteArgs::FUNCTION_PATH,
+            ConvexClient::prepare_args(UnMarkCompleteArgs {
+                quizID: quiz_id.to_string(),
+            }),
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 fn current_year() -> String {

@@ -1,0 +1,62 @@
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  <div>
+    {% if quiz.complete %}
+    <strong class="text-lg">{{ quiz.name }}</strong>
+    {% else %}
+    <a href="/quiz/{{ quiz._id }}" class="block">
+      <strong class="text-lg hover:text-green-300 transition-colors"
+        >{{ quiz.name }}</strong
+      >
+    </a>
+    {% endif %}
+    <div class="text-sm opacity-80">[{{ quiz.subject }}]</div>
+  </div>
+  <div class="flex items-center gap-3 flex-wrap">
+    <span class="text-sm">
+      Points: <span class="text-green-400">{{ quiz.points }}</span>
+    </span>
+    {% if quiz.complete %}
+    <div class="flex items-center gap-2">
+      <span
+        class="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-gray-700/50 text-gray-300"
+      >
+        <svg
+          class="mr-1.5 h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          ></path>
+        </svg>
+        Completed
+      </span>
+      <form
+        action="/reset-quiz"
+        method="post"
+        class="inline-block"
+        hx-post="/reset-quiz"
+        hx-target="closest li"
+      >
+        <input type="hidden" name="quiz_id" value="{{ quiz._id }}" />
+        <button
+          type="submit"
+          class="px-2 py-1 rounded text-sm font-medium bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50 transition-colors"
+        >
+          Reset
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <span
+      class="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-green-900/30 text-green-400"
+    >
+      Available
+    </span>
+    {% endif %}
+  </div>
+</div>

@@ -6,7 +6,8 @@ A project that explores using [htmx](https://htmx.org), [convex](https://www.con
 
 ![image](https://github.com/user-attachments/assets/63691043-19b2-43a9-948c-4d4e6c52c979)
 
-![image](https://github.com/user-attachments/assets/d417ef20-be84-468a-b6fc-c670eb7ebeef)
+![image](https://github.com/user-attachments/assets/8aa98f26-817f-46e0-8318-4b6cbb1e3157)
+
 
 ## Building locally
 

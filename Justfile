@@ -1,5 +1,8 @@
-run:
+dev:
   cargo run
+
+start:
+  cargo run --release
 
 convex:
   pnpm dlx convex dev --tail-logs
@@ -7,8 +10,6 @@ convex:
 watch:
   cargo watch -x 'run'
 
-setup-project:
-    exit
-
-setup-deps:
+setup:
     cargo binstall cargo-watch
+    pnpm dlx convex dev --tail-logs

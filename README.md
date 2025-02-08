@@ -2,6 +2,8 @@
 
 A project that explores using [htmx](https://htmx.org), [convex](https://www.convex.dev), and [rust](https://www.rust-lang.org) for web development.
 
+Youtube video demo - https://www.youtube.com/watch?v=XfuvStfcBNM&t=513s
+
 ## Examples
 
 ![image](https://github.com/user-attachments/assets/9c1f349a-2050-4e1f-a726-8d4a6b7658ce)
